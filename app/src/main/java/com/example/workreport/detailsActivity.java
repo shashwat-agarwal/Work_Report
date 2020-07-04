@@ -6,19 +6,26 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.SimpleTarget;
@@ -30,7 +37,9 @@ public class detailsActivity extends AppCompatActivity {
     private static final int PERMISSION_CODE =1000 ;
 
 
-
+    SQLiteDatabase database;
+    EditText nameE,addressE,phoneE;
+    String name,address,phone;
     TextView dateAndTime;
     ImageView imageView;
     Button addImg;
@@ -41,13 +50,25 @@ public class detailsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_details);
         dateAndTime = (TextView) findViewById(R.id.date);
         imageView = (ImageView) findViewById(R.id.imageview);
+        nameE=(EditText)findViewById(R.id.name);
+        addressE=findViewById(R.id.address);
+        phoneE=findViewById(R.id.phone);
         addImg=(Button)findViewById(R.id.addImg);
+
+
         String currentDateTimeString = java.text.DateFormat.getDateTimeInstance().format(new Date());
 
         // textView is the TextView view that should display it
         dateAndTime.setText(currentDateTimeString);
 
+        try {
 
+            database = this.openOrCreateDatabase("Report", MODE_PRIVATE, null);
+        }
+        catch (Exception e)
+        {
+            Toast.makeText(this, "Error in creation", Toast.LENGTH_SHORT).show();
+        }
 
     }
 
@@ -66,7 +87,42 @@ public class detailsActivity extends AppCompatActivity {
 
         if (id == R.id.done) {
             // do something here
+            try {
+
+                name=nameE.getText().toString().trim();
+
+                address=addressE.getText().toString().trim();
+                phone=phoneE.getText().toString().trim();
+
+                database.execSQL("CREATE TABLE IF NOT EXISTS report1 (name VARCHAR,address VARCHAR ,phone VARCHAR )");
+
+               // database.execSQL("INSERT INTO report1 (name,address,phone) VALUES ('name' ,'india','1234')");
+                Cursor c = database.rawQuery("SELECT * FROM report1", null);
+                if (!TextUtils.isEmpty(name) && !TextUtils.isEmpty(phone)){
+                    database.execSQL("INSERT INTO report1 (name,address,phone) VALUES ('" + name + "' ,'" + address + "','" + phone + "')");
+                int nameIndex = c.getColumnIndex("name");
+                int addressIndex = c.getColumnIndex("address");
+                int phoneIndex = c.getColumnIndex("phone");
+                c.moveToFirst();
+
+                while (c != null) {
+                    Log.i("name", c.getString(nameIndex));
+                    Log.i("address", c.getString(addressIndex));
+                    Log.i("phone", c.getString(phoneIndex));
+                    c.moveToNext();
+                }
+                    finish();
+                }
+                else {
+                    Toast.makeText(this, "Required fields", Toast.LENGTH_SHORT).show();
+                }
+
+            }
+            catch (Exception e){
+            e.printStackTrace();
             finish();
+            }
+
         }
         return super.onOptionsItemSelected(item);
     }
